@@ -14,7 +14,7 @@ dependencies = [
 ]
 
 [project.scripts]
-m2t = "m2t.cli:main"
+m2t = "m2t.cli:entry"
 
 [dependency-groups]
 dev = ["pytest"]

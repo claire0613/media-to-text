@@ -22,9 +22,20 @@ def test_fmt_ts():
 
 
 def test_to_traditional():
-    segs = to_traditional([Segment(None, 0, 1, "这个软件的内存", [Word("这", 0, 1)])])
+    segs = to_traditional([Segment(None, 0, 1, "这个软体的记忆体", [Word("这", 0, 1)])])
     assert segs[0].text == "這個軟體的記憶體"
     assert segs[0].words[0].text == "這"
+
+
+def test_to_traditional_keeps_everyday_words():
+    # s2twp 的詞彙轉換會把日常用語當成 IT 術語（對象→物件、類型→型別、連接→連線）
+    text = "适合你的对象，像这类型的，跟不同人连接"
+    assert to_traditional([Segment(None, 0, 1, text, [])])[0].text == "適合你的對象，像這類型的，跟不同人連接"
+
+
+def test_to_traditional_fixes_common_misconversions():
+    text = "它就是只有官网，就是只要做到，人生发展，一只猫"
+    assert to_traditional([Segment(None, 0, 1, text, [])])[0].text == "它就是只有官網，就是只要做到，人生發展，一隻貓"
 
 
 def test_render_md_uses_display_names():
@@ -75,7 +86,7 @@ def test_detect_languages_from_text():
 
 def test_to_traditional_skips_japanese_segments():
     segs = to_traditional([
-        Segment(None, 0, 1, "会议的软件", []),
+        Segment(None, 0, 1, "会议的软体", []),
         Segment(None, 1, 2, "会議の議事録を自動で作れる", []),
         Segment(None, 2, 3, "Hello world", []),
     ])

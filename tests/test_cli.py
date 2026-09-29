@@ -17,7 +17,7 @@ def _fake_pipeline(monkeypatch, tmp_path):
     monkeypatch.setattr(cli, "check_tools", lambda need_ytdlp: None)
     monkeypatch.setattr(cli, "prepare_audio", lambda src, work: (wav, "會議", 4.0))
     monkeypatch.setattr(cli, "get_engine", lambda name: lambda w, lang: ASRResult(
-        [Word("软", 0, 0.5), Word("件", 0.5, 1), Word("OK", 2.5, 3)], "Chinese"))
+        [Word("软", 0, 0.5), Word("体", 0.5, 1), Word("OK", 2.5, 3)], "Chinese"))
     monkeypatch.setattr(cli, "diarize", lambda *a, **k: [Turn("SPEAKER_1", 0, 2), Turn("SPEAKER_2", 2, 4)])
 
 
@@ -37,3 +37,9 @@ def test_rename(monkeypatch, tmp_path):
     cli.main(["rename", str(out), "--speakers", "SPEAKER_2=Amy"])
     assert "Amy：OK" in (out / "transcript.txt").read_text(encoding="utf-8")
     assert "**[00:00:02] Amy：** OK" in (out / "transcript.md").read_text(encoding="utf-8")
+
+
+def test_entry_returns_none_for_exit_code_zero(monkeypatch, tmp_path):
+    _fake_pipeline(monkeypatch, tmp_path)
+    monkeypatch.setattr("sys.argv", ["m2t", "x.m4a", "-o", str(tmp_path / "out")])
+    assert cli.entry() is None

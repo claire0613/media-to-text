@@ -99,3 +99,8 @@ def main(argv: list[str] | None = None) -> Path:
     p.add_argument("--no-diarize", action="store_true", help="不區分說話者")
     p.add_argument("--speakers", help='說話者命名，例如 "SPEAKER_1=Claire"')
     return run(p.parse_args(argv))
+
+
+def entry() -> None:
+    """console script 入口：main() 的回傳值會被 sys.exit 當成錯誤，這裡丟棄它。"""
+    main()
