@@ -25,6 +25,7 @@ uv sync
 
 echo "🔧 安裝全域指令 m2t…"
 uv tool install --force --python 3.12 --editable .
+uv tool update-shell >/dev/null 2>&1 || true   # 確保 ~/.local/bin 在 PATH（開新終端機後生效）
 
 skill_dir="$HOME/.claude/skills/media-to-text"
 mkdir -p "$(dirname "$skill_dir")"
@@ -41,4 +42,4 @@ if [[ -z "${HF_TOKEN:-}" ]] && ! uv run python -c "import huggingface_hub,sys; s
 EOF
 fi
 
-echo "✅ 完成！試試：m2t ~/Downloads/meeting.m4a"
+echo "✅ 完成！開一個新的終端機視窗，試試：m2t ~/Downloads/meeting.m4a"
