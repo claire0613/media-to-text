@@ -34,8 +34,8 @@ def test_to_traditional_keeps_everyday_words():
 
 
 def test_to_traditional_fixes_common_misconversions():
-    text = "它就是只有官网，就是只要做到，人生发展，一只猫"
-    assert to_traditional([Segment(None, 0, 1, text, [])])[0].text == "它就是只有官網，就是只要做到，人生發展，一隻貓"
+    text = "它就是只有官网，就是只要做到，人生发展，一只猫，IG账号"
+    assert to_traditional([Segment(None, 0, 1, text, [])])[0].text == "它就是只有官網，就是只要做到，人生發展，一隻貓，IG帳號"
 
 
 def test_render_md_uses_display_names():

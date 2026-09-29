@@ -60,3 +60,17 @@ def test_fix_reports_unmatched(monkeypatch, tmp_path, capsys):
     out = cli.main(["x.m4a", "-o", str(tmp_path / "out")])
     cli.main(["fix", str(out), "--replace", "不存在=X"])
     assert "不存在" in capsys.readouterr().err
+
+
+def test_fix_also_updates_words_used_by_srt(monkeypatch, tmp_path):
+    _fake_pipeline(monkeypatch, tmp_path)
+    out = cli.main(["x.m4a", "-o", str(tmp_path / "out")])
+    cli.main(["fix", str(out), "--replace", "軟體=軟件,OK=好的"])
+    data = json.loads((out / "transcript.json").read_text(encoding="utf-8"))
+    assert [w["text"] for s in data["segments"] for w in s["words"]] == ["軟", "件", "好的"]
+
+
+def test_replace_in_words_handles_length_change():
+    from m2t.cli import replace_in_words
+    words = [Word("明", 0, 1), Word("強", 1, 2), Word("那", 2, 3)]
+    assert [w.text for w in replace_in_words(words, {"明強": "冥想練習"})] == ["冥想練習", "", "那"]

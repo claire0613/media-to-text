@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import shutil
 import sys
 import time
 from datetime import date
+from dataclasses import replace
 from pathlib import Path
 
 from m2t.asr import get_engine
@@ -13,7 +15,7 @@ from m2t.diarize import diarize
 from m2t.export import write_all
 from m2t.fetch import check_tools, is_url, prepare_audio, slugify
 from m2t.merge import assign_speakers, build_segments, smooth_speakers
-from m2t.models import Transcript
+from m2t.models import Transcript, Word
 from m2t.postprocess import detect_languages, to_traditional
 
 
@@ -78,14 +80,37 @@ def rename(out_dir: Path, mapping: dict[str, str]) -> None:
     log(f"✅ 已更新說話者名稱 → {out_dir}")
 
 
+def replace_in_words(words: list[Word], mapping: dict[str, str]) -> list[Word]:
+    """在逐字資料接成的字串上取代，結果歸給比對起點所在的字（可跨字、可改變長度）。"""
+    joined = "".join(w.text for w in words)
+    owner = [i for i, w in enumerate(words) for _ in w.text]
+    texts = [""] * len(words)
+    pattern = re.compile("|".join(sorted(map(re.escape, mapping), key=len, reverse=True)))
+    pos = 0
+    for m in pattern.finditer(joined):
+        for k in range(pos, m.start()):
+            texts[owner[k]] += joined[k]
+        new = mapping[m.group()]
+        if len(new) == len(m.group()):  # 等長：逐字放回原本的字，保留各字時間戳
+            for k, ch in enumerate(new):
+                texts[owner[m.start() + k]] += ch
+        else:
+            texts[owner[m.start()]] += new
+        pos = m.end()
+    for k in range(pos, len(joined)):
+        texts[owner[k]] += joined[k]
+    return [replace(w, text=t) for w, t in zip(words, texts)]
+
+
 def fix(out_dir: Path, mapping: dict[str, str]) -> None:
-    """以「錯=對」批次修正辨識錯字（只改段落文字；words 保留原始辨識結果）。"""
+    """以「錯=對」批次修正辨識錯字，段落文字與逐字資料（SRT 長句會用到）一起改。"""
     path = out_dir / "transcript.json"
     t = Transcript.from_dict(json.loads(path.read_text(encoding="utf-8")))
     counts = {k: sum(s.text.count(k) for s in t.segments) for k in mapping}
     for s in t.segments:
         for wrong, right in mapping.items():
             s.text = s.text.replace(wrong, right)
+        s.words = replace_in_words(s.words, mapping)
     t.meta["fixes"] = {**t.meta.get("fixes", {}), **mapping}
     write_all(t, out_dir)
     for k, n in counts.items():
