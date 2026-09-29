@@ -12,7 +12,7 @@ from m2t.asr import get_engine
 from m2t.diarize import diarize
 from m2t.export import write_all
 from m2t.fetch import check_tools, is_url, prepare_audio, slugify
-from m2t.merge import assign_speakers, build_segments
+from m2t.merge import assign_speakers, build_segments, smooth_speakers
 from m2t.models import Transcript
 from m2t.postprocess import detect_languages, to_traditional
 
@@ -21,7 +21,7 @@ def log(msg: str) -> None:
     print(msg, file=sys.stderr, flush=True)
 
 
-def parse_speakers(s: str | None) -> dict[str, str]:
+def parse_mapping(s: str | None) -> dict[str, str]:
     if not s:
         return {}
     pairs = (p.split("=", 1) for p in s.split(",") if "=" in p)
@@ -46,13 +46,13 @@ def run(args: argparse.Namespace) -> Path:
         log("👥 區分說話者…")
         turns = diarize(wav, args.num_speakers, args.min_speakers, args.max_speakers)
 
-    words = assign_speakers(asr.words, turns or [])
+    words = smooth_speakers(assign_speakers(asr.words, turns or []))
     segments = build_segments(words)
     segments = to_traditional(segments)
     language = detect_languages(" ".join(s.text for s in segments))
 
     speaker_ids = list(dict.fromkeys(s.speaker for s in segments if s.speaker))
-    names = parse_speakers(args.speakers)
+    names = parse_mapping(args.speakers)
     transcript = Transcript(
         meta={"title": title, "source": args.source, "language": language,
               "duration": round(duration, 2), "engine": args.engine, "diarized": turns is not None},
@@ -78,14 +78,36 @@ def rename(out_dir: Path, mapping: dict[str, str]) -> None:
     log(f"✅ 已更新說話者名稱 → {out_dir}")
 
 
+def fix(out_dir: Path, mapping: dict[str, str]) -> None:
+    """以「錯=對」批次修正辨識錯字（只改段落文字；words 保留原始辨識結果）。"""
+    path = out_dir / "transcript.json"
+    t = Transcript.from_dict(json.loads(path.read_text(encoding="utf-8")))
+    counts = {k: sum(s.text.count(k) for s in t.segments) for k in mapping}
+    for s in t.segments:
+        for wrong, right in mapping.items():
+            s.text = s.text.replace(wrong, right)
+    t.meta["fixes"] = {**t.meta.get("fixes", {}), **mapping}
+    write_all(t, out_dir)
+    for k, n in counts.items():
+        log(f"   {k} → {mapping[k]}：{n} 處" if n else f"⚠️  找不到「{k}」")
+    log(f"✅ 已修正 → {out_dir}")
+
+
 def main(argv: list[str] | None = None) -> Path:
     argv = sys.argv[1:] if argv is None else argv
+    if argv and argv[0] == "fix":
+        p = argparse.ArgumentParser(prog="m2t fix")
+        p.add_argument("dir")
+        p.add_argument("--replace", required=True, help='例如 "明強=冥想,殺生=發聲"')
+        a = p.parse_args(argv[1:])
+        fix(Path(a.dir), parse_mapping(a.replace))
+        return Path(a.dir)
     if argv and argv[0] == "rename":
         p = argparse.ArgumentParser(prog="m2t rename")
         p.add_argument("dir")
         p.add_argument("--speakers", required=True, help='例如 "SPEAKER_1=Claire,SPEAKER_2=Amy"')
         a = p.parse_args(argv[1:])
-        rename(Path(a.dir), parse_speakers(a.speakers))
+        rename(Path(a.dir), parse_mapping(a.speakers))
         return Path(a.dir)
 
     p = argparse.ArgumentParser(prog="m2t", description="影片/錄音 → 標註說話者的逐字稿")

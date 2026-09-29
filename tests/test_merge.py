@@ -59,3 +59,51 @@ def test_join_tokens_space_after_ascii_punctuation():
     assert join_tokens(["Hello,", "I'm", "Daniel.", "I", "think"]) == "Hello, I'm Daniel. I think"
     assert join_tokens(["Friday.", "好", "的"]) == "Friday. 好的"
     assert join_tokens(["好", "的，", "OK"]) == "好的，OK"
+
+
+def _w(spec):
+    """'改:1:0.0 變。:2:1.2' → words（text:speaker:start，長度 0.2 秒）"""
+    out = []
+    for tok in spec.split():
+        text, spk, start = tok.split(":")
+        out.append(Word(text, float(start), float(start) + 0.2, f"SPEAKER_{spk}"))
+    return out
+
+
+def test_smooth_moves_sentence_tail_back_to_previous_speaker():
+    from m2t.merge import smooth_speakers
+    words = _w("大:1:0.0 幅:1:0.2 的:1:0.4 改:1:0.6 變。:2:1.5 然:2:1.7 後:2:1.9")
+    assert [w.speaker[-1] for w in smooth_speakers(words)] == list("1111122")
+
+
+def test_smooth_keeps_real_turn_after_finished_sentence():
+    from m2t.merge import smooth_speakers
+    words = _w("好。:1:0.0 對。:2:0.4 然:2:0.6")
+    assert [w.speaker[-1] for w in smooth_speakers(words)] == list("122")
+
+
+def test_smooth_keeps_long_answer_and_big_gap():
+    from m2t.merge import smooth_speakers
+    words = _w("對:1:0.0 嗎？:2:3.0")  # 間隔 2.8 秒 → 是新的發言
+    assert [w.speaker[-1] for w in smooth_speakers(words)] == list("12")
+    words = _w("你:1:0.0 覺:1:0.2 得:1:0.4 還:2:0.8 不:2:1.0 錯。:2:1.2")  # 3 個字 → 不動
+    assert [w.speaker[-1] for w in smooth_speakers(words)] == list("111222")
+
+
+def test_smooth_relabels_single_char_island():
+    from m2t.merge import smooth_speakers
+    words = _w("練:2:0.0 習，:2:0.2 那:1:0.45 其:2:0.7 實:2:0.9")
+    assert [w.speaker[-1] for w in smooth_speakers(words)] == list("22222")
+
+
+def test_smooth_keeps_backchannel_with_pauses():
+    from m2t.merge import smooth_speakers
+    words = _w("說:2:0.0 完。:2:0.2 嗯，:1:1.0 然:2:2.0")
+    assert [w.speaker[-1] for w in smooth_speakers(words)] == list("2212")
+
+
+def test_smooth_does_not_mutate_input():
+    from m2t.merge import smooth_speakers
+    words = _w("改:1:0.0 變。:2:0.3")
+    smooth_speakers(words)
+    assert words[1].speaker == "SPEAKER_2"

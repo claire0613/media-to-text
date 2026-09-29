@@ -14,9 +14,9 @@
 | 🧠 **Qwen3-ASR-1.7B** | 開源中文辨識最準的模型之一，30 語言＋22 種中文方言，中英/中日夾雜也行 |
 | 👥 **說話者區分** | pyannote community-1，逐字時間戳對齊到說話者，不限人數 |
 | ⚡ **Apple GPU** | MLX（ASR）＋ MPS（說話者區分） |
-| 🇹🇼 **繁體台灣用語** | OpenCC s2twp（软件→軟體、内存→記憶體） |
+| 🇹🇼 **繁體中文** | OpenCC s2tw（只轉字形，不做詞彙替換，避免「對象→物件」這類誤轉）＋常見誤轉修正 |
 | 📄 **多種輸出** | Markdown、SRT 字幕、JSON、純文字 |
-| 🤖 **Claude Code skill** | `/media-to-text`：推測說話者姓名、翻譯、依範本摘要 |
+| 🤖 **Claude Code skill** | `/media-to-text`：推測說話者姓名、校對錯字、翻譯、依範本摘要 |
 
 ## 安裝
 
@@ -51,6 +51,7 @@ m2t a.m4a --speakers "SPEAKER_1=Claire,SPEAKER_2=Amy"
 m2t a.m4a --no-diarize                            # 只轉文字
 
 m2t rename output/2026-09-29_週會 --speakers "SPEAKER_2=Amy"   # 事後改名
+m2t fix output/2026-09-29_週會 --replace "明強=冥想,殺生=發聲"    # 修正辨識錯字
 ```
 
 在 Claude Code 中：
@@ -82,8 +83,9 @@ m2t rename output/2026-09-29_週會 --speakers "SPEAKER_2=Amy"   # 事後改名
      ├─ Qwen3-ASR + ForcedAligner → 每個字 (text, start, end)
      └─ pyannote community-1      → 說話者時段 (exclusive)
          ↓ 每個字分給時間重疊最多的說話者
+         ↓ 平滑交界：被切走的句尾、夾在中間的單字，歸回原說話者
          ↓ 同一人連續的字合併成段（換人、停頓 >1.5s、超過 30s 遇句號時切段）
-         ↓ 中文 → OpenCC s2twp
+         ↓ 中文 → OpenCC s2tw（整段轉換，有上下文）
          → md / srt / json / txt
 ```
 

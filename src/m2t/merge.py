@@ -67,6 +67,48 @@ def assign_speakers(words: list[Word], turns: list[Turn]) -> list[Word]:
     return out
 
 
+_PUNCT = set("，。！？、,.!?；;：:")
+
+
+def _core_len(text: str) -> int:
+    return sum(1 for c in text if c not in _PUNCT and not c.isspace())
+
+
+def smooth_speakers(words: list[Word], max_chars: int = 2, max_gap: float = 1.5,
+                    island_gap: float = 0.3) -> list[Word]:
+    """修正說話者交界的誤分（diarization 時段與 aligner 時間戳的小落差造成）。
+
+    1. 單字孤島：夾在同一人中間、前後幾乎無停頓的單一個字 → 歸回那個人
+    2. 句尾被切走：前一人句子沒講完，下一人開頭只有 ≤ max_chars 字就句號 → 歸回前一人
+    """
+    w = [replace(x) for x in words]
+    for i in range(1, len(w) - 1):
+        a, b, c = w[i - 1], w[i], w[i + 1]
+        if (a.speaker == c.speaker != b.speaker and _core_len(b.text) <= 1
+                and b.start - a.end <= island_gap and c.start - b.end <= island_gap):
+            b.speaker = a.speaker
+
+    i = 1
+    while i < len(w):
+        prev, cur = w[i - 1], w[i]
+        if (cur.speaker != prev.speaker and prev.speaker and cur.speaker
+                and prev.text.strip()[-1:] not in SENTENCE_END and cur.start - prev.end <= max_gap):
+            j, n = i, 0
+            while j < len(w) and w[j].speaker == cur.speaker:
+                n += _core_len(w[j].text)
+                if w[j].text.strip()[-1:] in _PUNCT:
+                    break
+                j += 1
+            if (j < len(w) and w[j].speaker == cur.speaker and n <= max_chars
+                    and w[j].text.strip()[-1:] in SENTENCE_END):
+                for k in range(i, j + 1):
+                    w[k].speaker = prev.speaker
+                i = j + 1
+                continue
+        i += 1
+    return w
+
+
 def build_segments(words: list[Word], max_gap: float = 1.5, max_len: float = 30.0) -> list[Segment]:
     segments: list[Segment] = []
     cur: list[Word] = []

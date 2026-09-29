@@ -47,6 +47,18 @@ def to_traditional(segments: list[Segment]) -> list[Segment]:
         if _KANA.search(s.text) or not _HAN.search(s.text):
             out.append(s)
         else:
-            out.append(replace(s, text=convert(s.text),
-                               words=[replace(w, text=convert(w.text)) for w in s.words]))
+            out.append(replace(s, text=convert(s.text), words=_convert_words(s.words, convert)))
+    return out
+
+
+def _convert_words(words, convert):
+    """整串一起轉（有上下文，「关|系」才會變「關係」），再依原長度切回每個字。"""
+    joined = "".join(w.text for w in words)
+    converted = convert(joined)
+    if len(converted) != len(joined):
+        return [replace(w, text=convert(w.text)) for w in words]
+    out, pos = [], 0
+    for w in words:
+        out.append(replace(w, text=converted[pos:pos + len(w.text)]))
+        pos += len(w.text)
     return out

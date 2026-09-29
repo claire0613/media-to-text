@@ -109,3 +109,9 @@ def test_srt_splits_english_sentences_and_merges_short_ones():
     t = Transcript({"title": "x"}, {}, [Segment(None, 0, 9.5, text, words)])
     texts = [b.split("\n")[2] for b in render_srt(t).strip().split("\n\n")]
     assert texts == ["Hi. OK.", "A long sentence.", "Version 3.5 works."]
+
+
+def test_to_traditional_converts_words_with_context():
+    words = [Word("比", 0, 1), Word("较", 1, 2), Word("有", 2, 3), Word("关", 3, 4), Word("系，", 4, 5)]
+    seg = to_traditional([Segment(None, 0, 5, "比较有关系，", words)])[0]
+    assert [w.text for w in seg.words] == ["比", "較", "有", "關", "係，"]

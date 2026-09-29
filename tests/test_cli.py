@@ -6,9 +6,9 @@ from m2t.asr.base import ASRResult
 from m2t.models import Turn, Word
 
 
-def test_parse_speakers():
-    assert cli.parse_speakers("SPEAKER_1=Claire, SPEAKER_2=Amy") == {"SPEAKER_1": "Claire", "SPEAKER_2": "Amy"}
-    assert cli.parse_speakers(None) == {}
+def test_parse_mapping():
+    assert cli.parse_mapping("SPEAKER_1=Claire, SPEAKER_2=Amy") == {"SPEAKER_1": "Claire", "SPEAKER_2": "Amy"}
+    assert cli.parse_mapping(None) == {}
 
 
 def _fake_pipeline(monkeypatch, tmp_path):
@@ -43,3 +43,20 @@ def test_entry_returns_none_for_exit_code_zero(monkeypatch, tmp_path):
     _fake_pipeline(monkeypatch, tmp_path)
     monkeypatch.setattr("sys.argv", ["m2t", "x.m4a", "-o", str(tmp_path / "out")])
     assert cli.entry() is None
+
+
+def test_fix_replaces_text_and_rerenders(monkeypatch, tmp_path):
+    _fake_pipeline(monkeypatch, tmp_path)
+    out = cli.main(["x.m4a", "-o", str(tmp_path / "out")])
+    cli.main(["fix", str(out), "--replace", "軟體=軟件,OK=好的"])
+    txt = (out / "transcript.txt").read_text(encoding="utf-8")
+    assert "軟件" in txt and "好的" in txt and "OK" not in txt
+    data = json.loads((out / "transcript.json").read_text(encoding="utf-8"))
+    assert data["meta"]["fixes"] == {"軟體": "軟件", "OK": "好的"}
+
+
+def test_fix_reports_unmatched(monkeypatch, tmp_path, capsys):
+    _fake_pipeline(monkeypatch, tmp_path)
+    out = cli.main(["x.m4a", "-o", str(tmp_path / "out")])
+    cli.main(["fix", str(out), "--replace", "不存在=X"])
+    assert "不存在" in capsys.readouterr().err
