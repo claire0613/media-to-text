@@ -28,7 +28,7 @@
 bash install.sh
 ```
 
-會安裝 ffmpeg / yt-dlp / uv、建立環境、安裝全域指令 `m2t`，並把 skill 連結到 `~/.claude/skills/media-to-text`。
+會安裝 ffmpeg / yt-dlp / uv、建立環境（虛擬環境放在 `~/.local/share/m2t/venv`，`.venv` 是指向它的 symlink——避免 iCloud 同步的桌面把套件檔標成 hidden 或移到雲端）、安裝全域指令 `m2t`，並把 skill 連結到 `~/.claude/skills/media-to-text`。
 
 ### 說話者區分需要 HuggingFace token（免費，一次性）
 

@@ -13,10 +13,18 @@ if ((${#missing[@]})); then
 fi
 
 echo "🐍 建立 Python 環境…"
+# iCloud 同步的資料夾（如 Desktop）會把 .venv 內檔案標成 hidden，Python 會略過 hidden 的 .pth，
+# 甚至把套件檔案移到雲端（dataless）。因此把虛擬環境放在 iCloud 外，用 symlink 連回來。
+venv_dir="$HOME/.local/share/m2t/venv"
+if [[ ! -L .venv ]]; then
+  rm -rf .venv
+  [[ -d "$venv_dir" ]] || uv venv --python 3.12 "$venv_dir"
+  ln -s "$venv_dir" .venv
+fi
 uv sync
 
-echo "🔧 安裝全域指令 m2t…（改程式後重跑本腳本以更新）"
-uv tool install --force --python 3.12 .   # 非 editable：避免 macOS hidden .pth 被 Python 略過
+echo "🔧 安裝全域指令 m2t…"
+uv tool install --force --python 3.12 --editable .
 
 skill_dir="$HOME/.claude/skills/media-to-text"
 mkdir -p "$(dirname "$skill_dir")"
