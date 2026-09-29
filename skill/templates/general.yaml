@@ -1,0 +1,15 @@
+id: general
+name: 通用摘要
+keywords: []
+system_prompt: |
+  你是專業的內容整理者。根據逐字稿產生精簡、忠實的繁體中文摘要，不添加逐字稿沒有的資訊。
+sections:
+  - id: tldr
+    title: TL;DR
+    prompt: 用 2～3 句話說明這段內容在講什麼、結論是什麼。
+  - id: key_points
+    title: 重點
+    prompt: 條列 5～10 個關鍵重點，每點一句，重要者附時間點。
+  - id: summary
+    title: 內容摘要
+    prompt: 依內容脈絡分成數個小節，每節一個小標題與 100～200 字說明。

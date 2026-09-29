@@ -1,0 +1,15 @@
+id: interview
+name: 訪談/面試摘要
+keywords: [面試, 候選人, 經歷, 為什麼想, 自我介紹, 訪談, interview, candidate, experience]
+system_prompt: |
+  你是專業的訪談整理者，忠實呈現問答，評估時明確區分事實與推論。
+sections:
+  - id: profile
+    title: 受訪者背景
+    prompt: 整理受訪者自述的背景、經歷、專長。
+  - id: qa
+    title: 問答紀錄
+    prompt: 依順序列出主要問題（誰問）與回答重點（誰答），附時間點。
+  - id: assessment
+    title: 觀察與評估
+    prompt: 優勢、疑慮、需要追問之處，每點附逐字稿依據。

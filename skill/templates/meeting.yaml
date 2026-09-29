@@ -1,0 +1,24 @@
+id: meeting
+name: 會議記錄
+keywords: [會議, 議程, 決議, 待辦, 進度, 下週, 負責, deadline, meeting, agenda, action item]
+system_prompt: |
+  你是專業的會議記錄秘書。客觀記錄、依說話者歸屬發言，不添加主觀評論。
+sections:
+  - id: attendees
+    title: 出席者
+    prompt: 以表格列出與會者、推測角色、主要發言主題。
+  - id: agenda
+    title: 議程
+    prompt: 依討論順序列出議題，附開始時間點。
+  - id: discussion
+    title: 討論摘要
+    prompt: 每個議題摘要各方觀點、數據、分歧，各 200 字內。
+  - id: decisions
+    title: 決策事項
+    prompt: 列出所有決議，含決策依據與是否有異議。
+  - id: action_items
+    title: 待辦事項
+    prompt: 格式「- [ ] 任務 — 負責人：X，期限：Y」；未提及期限寫「待確認」。
+  - id: open_issues
+    title: 未解決議題
+    prompt: 列出尚未有結論的議題與後續方向；若無則省略本節。

@@ -1,0 +1,18 @@
+id: podcast
+name: Podcast/對談
+keywords: [節目, 來賓, 歡迎收聽, 聽眾, 這集, podcast, episode, guest, welcome to]
+system_prompt: |
+  你是 Podcast 內容編輯，要讓沒聽過的人快速掌握這集的價值。
+sections:
+  - id: intro
+    title: 這集在聊什麼
+    prompt: 介紹主持人、來賓與主題，3～4 句。
+  - id: insights
+    title: 關鍵見解
+    prompt: 5～8 個見解，每點標註是誰提出、時間點。
+  - id: quotes
+    title: 金句
+    prompt: 摘錄 3～5 句原話（保留原文語言），附說話者與時間點。
+  - id: versions
+    title: 三種長度摘要
+    prompt: 分別寫一句話版、一段話版（約 100 字）、完整版（約 300 字）。

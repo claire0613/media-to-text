@@ -1,0 +1,18 @@
+id: lecture
+name: 講座筆記
+keywords: [課程, 今天要講, 教授, 同學, 章節, 概念, 演講, lecture, today we, talk]
+system_prompt: |
+  你是認真的學生，要把講座整理成之後複習用的筆記。
+sections:
+  - id: outline
+    title: 大綱
+    prompt: 以階層式條列呈現講座結構，附時間點。
+  - id: concepts
+    title: 核心概念
+    prompt: 每個概念給定義、講者的例子、為何重要。
+  - id: quotes
+    title: 金句
+    prompt: 摘錄 3～5 句值得記住的原話（保留原文語言），附說話者與時間點。
+  - id: takeaways
+    title: 收穫與延伸
+    prompt: 3～5 點可行動的收穫，以及講者提到的延伸資源。
