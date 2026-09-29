@@ -106,3 +106,9 @@ uv sync
 uv run pytest            # 單元測試（不載模型）
 uv run pytest -m slow -s # 端對端：用 macOS say 合成雙人對話實跑
 ```
+
+## 授權
+
+程式碼以 [MIT](./LICENSE) 授權。
+
+模型不包含在本 repo 中，使用時會從 Hugging Face 下載，各自適用原本的授權：Qwen3-ASR / Qwen3-ForcedAligner（Apache 2.0）、Whisper（MIT）、pyannote community-1（CC-BY-4.0，使用時須標示出處）。

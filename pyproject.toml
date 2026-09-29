@@ -3,6 +3,8 @@ name = "m2t"
 version = "0.1.0"
 description = "Local media-to-text with speaker diarization (Qwen3-ASR + pyannote)"
 requires-python = ">=3.10,<3.13"
+license = "MIT"
+license-files = ["LICENSE"]
 dependencies = [
   "mlx-qwen3-asr[aligner]",
   "mlx-whisper",
