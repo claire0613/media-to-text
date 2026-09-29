@@ -1,22 +1,21 @@
 # media-to-text (m2t) 設計文件
 
 日期：2026-09-29
-參考：https://github.com/ci-yang/media-to-text-skill
 
 ## 目標
 
 在 Apple Silicon Mac（M1 Pro / 16GB）本機、離線地把影片或錄音轉成**標註說話者**的逐字稿，支援中文（台灣）、英文、日文與混語。提供命令列工具 `m2t`，並包成 Claude Code skill `/media-to-text`，由 Claude 負責說話者命名推測、翻譯、摘要。
 
-## 與參考專案的差異
+## 設計重點
 
-| | 參考專案 | m2t |
+| | 常見做法 | m2t |
 |---|---|---|
 | ASR | mlx-whisper large-v3-turbo | **Qwen3-ASR-1.7B**（mlx-qwen3-asr），Whisper 為備用 |
 | 說話者區分 | 無（交給 LLM 猜） | **pyannote community-1** + 逐字時間戳對齊 |
 | 字詞時間戳 | Whisper word_timestamps | Qwen3-ForcedAligner-0.6B |
 | 輸出 | md / txt / json | md / srt / json / txt，每段含說話者 |
 
-保留參考專案的經驗：語言與音訊一致、非中文先原文轉錄再由 Claude 翻譯、OpenCC s2twp、Whisper 設 `condition_on_previous_text=False`。
+沿用的經驗：語言與音訊一致、非中文先原文轉錄再由 Claude 翻譯、OpenCC s2twp、Whisper 設 `condition_on_previous_text=False`。
 
 ## 模型選擇理由（2026-09 調查）
 

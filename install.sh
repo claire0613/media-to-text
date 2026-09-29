@@ -13,14 +13,14 @@ if ((${#missing[@]})); then
 fi
 
 echo "🐍 建立 Python 環境…"
-# iCloud 同步的資料夾（如 Desktop）會把 .venv 內檔案標成 hidden，Python 會略過 hidden 的 .pth，
-# 甚至把套件檔案移到雲端（dataless）。因此把虛擬環境放在 iCloud 外，用 symlink 連回來。
-venv_dir="$HOME/.local/share/m2t/venv"
-if [[ ! -L .venv ]]; then
-  rm -rf .venv
-  [[ -d "$venv_dir" ]] || uv venv --python 3.12 "$venv_dir"
-  ln -s "$venv_dir" .venv
-fi
+# iCloud 同步的資料夾（Desktop / Documents）會把 .venv 內檔案標成 hidden（Python 會略過 hidden 的 .pth）、
+# 產生「檔名 2」衝突副本、甚至還原 .git/config。請把專案放在 iCloud 以外的位置，例如 ~/Developer。
+case "$PWD" in
+  "$HOME/Desktop"*|"$HOME/Documents"*|"$HOME/Library/Mobile Documents"*)
+    if xattr "$HOME/Desktop" 2>/dev/null | grep -q com.apple.icloud; then
+      echo "⚠️  專案位於 iCloud 同步資料夾（$PWD），建議搬到 ~/Developer 後再安裝。" >&2
+    fi ;;
+esac
 uv sync
 
 echo "🔧 安裝全域指令 m2t…"

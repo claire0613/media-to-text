@@ -2,8 +2,6 @@
 
 把影片或錄音轉成**標註說話者**的逐字稿，全程在 Mac 本機執行、免費、離線。支援中文（台灣）、英文、日文與混語。
 
-參考 [ci-yang/media-to-text-skill](https://github.com/ci-yang/media-to-text-skill)，換成 2026 年更新的模型，並加入說話者區分。
-
 ```
 **[00:00:03] Claire：** 大家好，今天我們討論新的專案時程。
 **[00:00:09] Daniel：** I think the deadline should be next Friday.
@@ -24,11 +22,13 @@
 
 需求：Apple Silicon Mac、16GB RAM 以上、Homebrew。
 
+> ⚠️ 請把專案放在 iCloud 同步以外的資料夾（例如 `~/Developer`）。iCloud 同步的「桌面 / 文件」會讓虛擬環境失效、產生「檔名 2」副本，甚至還原 git 設定。
+
 ```bash
 bash install.sh
 ```
 
-會安裝 ffmpeg / yt-dlp / uv、建立環境（虛擬環境放在 `~/.local/share/m2t/venv`，`.venv` 是指向它的 symlink——避免 iCloud 同步的桌面把套件檔標成 hidden 或移到雲端）、安裝全域指令 `m2t`，並把 skill 連結到 `~/.claude/skills/media-to-text`。
+會安裝 ffmpeg / yt-dlp / uv、建立環境、安裝全域指令 `m2t`，並把 skill 連結到 `~/.claude/skills/media-to-text`。
 
 ### 說話者區分需要 HuggingFace token（免費，一次性）
 
