@@ -7,12 +7,15 @@ from m2t.models import Segment, Turn, Word
 
 _LATIN = re.compile(r"[A-Za-z0-9]")
 _NO_SPACE_BEFORE = set(".,!?;:%)]}'\"")
+_ASCII_PUNCT = set(",.!?;:")
 SENTENCE_END = set("。！？.!?")
 
 
 def _needs_space(prev: str, cur: str) -> bool:
     if not prev or not cur or cur[0] in _NO_SPACE_BEFORE:
         return False
+    if prev[-1] in _ASCII_PUNCT:  # "Hello," + "I'm" → "Hello, I'm"
+        return cur[0].isalnum()
     # 只要一邊是拉丁字母/數字、另一邊不是標點，就加空白（中英之間也加，較易讀）
     prev_latin = bool(_LATIN.match(prev[-1]))
     cur_latin = bool(_LATIN.match(cur[0]))

@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 from m2t.merge import SENTENCE_END, join_tokens
-from m2t.models import Transcript, Word
+from m2t.models import Segment, Transcript, Word
 
 SRT_MAX = 7.0
+SRT_MIN = 2.0  # 短於此的句子併入前一則字幕
+_SENTENCE_RE = re.compile(r".+?(?:[。！？]+|[.!?]+(?=\s|$)|$)")
 
 
 def fmt_ts(sec: float, srt: bool = False) -> str:
@@ -40,25 +43,53 @@ def render_md(t: Transcript) -> str:
     return "\n".join(lines)
 
 
-def _srt_chunks(words: list[Word]) -> list[list[Word]]:
+def _word_chunks(words: list[Word]) -> list[tuple[float, float, str]]:
+    """依時間切成 ≤ SRT_MAX 秒的片段，文字由字詞組合（僅在無法對齊句子時使用）。"""
     chunks, cur = [], []
     for w in words:
         cur.append(w)
-        long_enough = w.end - cur[0].start >= SRT_MAX
-        if long_enough or (w.text.strip()[-1:] in SENTENCE_END and w.end - cur[0].start >= 2.0):
+        if w.end - cur[0].start >= SRT_MAX:
             chunks.append(cur)
             cur = []
     if cur:
         chunks.append(cur)
-    return chunks
+    return [(c[0].start, c[-1].end, join_tokens([w.text for w in c])) for c in chunks]
+
+
+def _sentence_pieces(seg: Segment) -> list[tuple[float, float, str]]:
+    """段落文字依句尾標點切句，時間取自對應的字詞群組。
+
+    文字用段落文字（經整段 OpenCC，詞彙轉換正確），而非逐字重組。
+    """
+    sentences = [x.strip() for x in _SENTENCE_RE.findall(seg.text) if x.strip()]
+    groups, cur = [], []
+    for w in seg.words:
+        cur.append(w)
+        if w.text.strip()[-1:] in SENTENCE_END:
+            groups.append(cur)
+            cur = []
+    if cur:
+        groups.append(cur)
+    if len(sentences) != len(groups):
+        return _word_chunks(seg.words)
+
+    pieces: list[tuple[float, float, str]] = []
+    for text, g in zip(sentences, groups):
+        start, end = g[0].start, g[-1].end
+        if end - start > SRT_MAX:
+            pieces += _word_chunks(g)
+        elif pieces and end - pieces[-1][0] <= SRT_MIN:
+            a, _, prev = pieces[-1]
+            pieces[-1] = (a, end, join_tokens([prev, text]))
+        else:
+            pieces.append((start, end, text))
+    return pieces
 
 
 def render_srt(t: Transcript) -> str:
     blocks = []
     for s in t.segments:
-        chunks = _srt_chunks(s.words) if s.words else []
-        pieces = [(c[0].start, c[-1].end, join_tokens([w.text for w in c])) for c in chunks] \
-            if len(chunks) > 1 else [(s.start, s.end, s.text)]
+        pieces = _sentence_pieces(s) if s.words else [(s.start, s.end, s.text)]
         for start, end, text in pieces:
             blocks.append((start, end, _prefix(t, s.speaker) + text))
     return "".join(

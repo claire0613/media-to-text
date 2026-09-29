@@ -80,3 +80,21 @@ def test_to_traditional_skips_japanese_segments():
         Segment(None, 2, 3, "Hello world", []),
     ])
     assert [s.text for s in segs] == ["會議的軟體", "会議の議事録を自動で作れる", "Hello world"]
+
+
+def test_srt_uses_segment_text_not_rejoined_words():
+    # 段落文字經過整段 OpenCC（下週），逐字轉換則是「周」；SRT 應使用段落文字
+    words = [Word("下", 0, 1), Word("周", 1, 2), Word("五。", 2, 3), Word("好", 3.5, 4), Word("的。", 4, 6)]
+    t = Transcript({"title": "x"}, {}, [Segment(None, 0, 6, "下週五。好的。", words)])
+    blocks = [b.split("\n") for b in render_srt(t).strip().split("\n\n")]
+    assert [b[2] for b in blocks] == ["下週五。", "好的。"]
+    assert blocks[1][1] == "00:00:03,500 --> 00:00:06,000"
+
+
+def test_srt_splits_english_sentences_and_merges_short_ones():
+    words = [Word("Hi.", 0, 0.5), Word("OK.", 0.6, 1.0), Word("A", 3.0, 4.0), Word("long", 4.0, 5.0),
+             Word("sentence.", 5.0, 6.0), Word("Version", 6.5, 7.5), Word("3.5", 7.5, 8.5), Word("works.", 8.5, 9.5)]
+    text = "Hi. OK. A long sentence. Version 3.5 works."
+    t = Transcript({"title": "x"}, {}, [Segment(None, 0, 9.5, text, words)])
+    texts = [b.split("\n")[2] for b in render_srt(t).strip().split("\n\n")]
+    assert texts == ["Hi. OK.", "A long sentence.", "Version 3.5 works."]

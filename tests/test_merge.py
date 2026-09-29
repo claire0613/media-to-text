@@ -53,3 +53,9 @@ def test_build_segments_splits_long_at_sentence_end():
 
 def test_build_segments_empty():
     assert build_segments([]) == []
+
+
+def test_join_tokens_space_after_ascii_punctuation():
+    assert join_tokens(["Hello,", "I'm", "Daniel.", "I", "think"]) == "Hello, I'm Daniel. I think"
+    assert join_tokens(["Friday.", "好", "的"]) == "Friday. 好的"
+    assert join_tokens(["好", "的，", "OK"]) == "好的，OK"
