@@ -14,7 +14,7 @@ from m2t.export import write_all
 from m2t.fetch import check_tools, is_url, prepare_audio, slugify
 from m2t.merge import assign_speakers, build_segments
 from m2t.models import Transcript
-from m2t.postprocess import is_chinese, to_traditional
+from m2t.postprocess import detect_languages, to_traditional
 
 
 def log(msg: str) -> None:
@@ -39,7 +39,7 @@ def run(args: argparse.Namespace) -> Path:
 
     log(f"📝 轉錄中（{args.engine}）…")
     asr = get_engine(args.engine)(wav, args.lang)
-    log(f"   語言：{asr.language}，{len(asr.words)} 個字詞")
+    log(f"   {len(asr.words)} 個字詞")
 
     turns = None
     if not args.no_diarize:
@@ -48,13 +48,13 @@ def run(args: argparse.Namespace) -> Path:
 
     words = assign_speakers(asr.words, turns or [])
     segments = build_segments(words)
-    if is_chinese(asr.language):
-        segments = to_traditional(segments)
+    segments = to_traditional(segments)
+    language = detect_languages(" ".join(s.text for s in segments))
 
     speaker_ids = list(dict.fromkeys(s.speaker for s in segments if s.speaker))
     names = parse_speakers(args.speakers)
     transcript = Transcript(
-        meta={"title": title, "source": args.source, "language": asr.language,
+        meta={"title": title, "source": args.source, "language": language,
               "duration": round(duration, 2), "engine": args.engine, "diarized": turns is not None},
         speakers={sid: names.get(sid, sid) for sid in speaker_ids},
         segments=segments,
@@ -92,7 +92,7 @@ def main(argv: list[str] | None = None) -> Path:
     p.add_argument("source", help="本機檔案或網址（YouTube 等）")
     p.add_argument("-o", "--output", help="輸出資料夾（預設 output/日期_標題）")
     p.add_argument("--engine", choices=["qwen", "whisper"], default="qwen")
-    p.add_argument("--lang", help="語言代碼 zh/en/ja…（預設自動偵測）")
+    p.add_argument("--lang", help="語言提示 zh/en/ja/auto（qwen 預設 zh 提示，不會翻譯其他語言；whisper 預設自動偵測）")
     p.add_argument("--num-speakers", type=int)
     p.add_argument("--min-speakers", type=int)
     p.add_argument("--max-speakers", type=int)

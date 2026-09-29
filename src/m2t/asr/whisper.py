@@ -13,7 +13,7 @@ def transcribe(wav: Path, language: str | None) -> ASRResult:
     import mlx_whisper
 
     result = mlx_whisper.transcribe(
-        str(wav), path_or_hf_repo=MODEL, language=language,
+        str(wav), path_or_hf_repo=MODEL, language=None if language == "auto" else language,
         initial_prompt=PROMPTS.get(language or ""),
         condition_on_previous_text=False, word_timestamps=True, verbose=False,
     )

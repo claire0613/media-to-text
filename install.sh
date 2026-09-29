@@ -15,8 +15,8 @@ fi
 echo "🐍 建立 Python 環境…"
 uv sync
 
-echo "🔧 安裝全域指令 m2t…"
-uv tool install --force --python 3.12 --editable .
+echo "🔧 安裝全域指令 m2t…（改程式後重跑本腳本以更新）"
+uv tool install --force --python 3.12 .   # 非 editable：避免 macOS hidden .pth 被 Python 略過
 
 skill_dir="$HOME/.claude/skills/media-to-text"
 mkdir -p "$(dirname "$skill_dir")"

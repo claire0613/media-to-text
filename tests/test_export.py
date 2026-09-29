@@ -2,7 +2,7 @@ import json
 
 from m2t.export import fmt_ts, render_md, render_srt, render_txt, write_all
 from m2t.models import Segment, Transcript, Word
-from m2t.postprocess import is_chinese, to_traditional
+from m2t.postprocess import to_traditional
 
 
 def _t():
@@ -19,11 +19,6 @@ def _t():
 def test_fmt_ts():
     assert fmt_ts(3725.5) == "01:02:05"
     assert fmt_ts(3725.5, srt=True) == "01:02:05,500"
-
-
-def test_is_chinese():
-    assert is_chinese("Chinese") and is_chinese("zh") and is_chinese("Cantonese")
-    assert not is_chinese("English") and not is_chinese("ja")
 
 
 def test_to_traditional():
@@ -69,3 +64,19 @@ def test_write_all(tmp_path):
         assert (tmp_path / name).exists()
     data = json.loads((tmp_path / "transcript.json").read_text(encoding="utf-8"))
     assert data["speakers"]["SPEAKER_1"] == "Claire"
+
+
+def test_detect_languages_from_text():
+    from m2t.postprocess import detect_languages
+    assert detect_languages("大家好 Hello there 好的") == "zh+en"
+    assert detect_languages("今日は音声認識について話します") == "ja"
+    assert detect_languages("Just English.") == "en"
+
+
+def test_to_traditional_skips_japanese_segments():
+    segs = to_traditional([
+        Segment(None, 0, 1, "会议的软件", []),
+        Segment(None, 1, 2, "会議の議事録を自動で作れる", []),
+        Segment(None, 2, 3, "Hello world", []),
+    ])
+    assert [s.text for s in segs] == ["會議的軟體", "会議の議事録を自動で作れる", "Hello world"]
